@@ -544,11 +544,13 @@ function App(){
 
   useEffect(()=>{
     if(!IS_CONFIGURED){setAuthLoading(false);return;}
-    // Handle redirect result first (for mobile/popup-blocked cases)
-    firebase.auth().getRedirectResult().then(result=>{
-      // redirect result handled by onAuthStateChanged
-    }).catch(e=>console.error(e));
-    return firebase.auth().onAuthStateChanged(u=>{setUser(u);setAuthLoading(false);});
+    firebase.auth().getRedirectResult()
+      .then(()=>{})
+      .catch(e=>console.error("Redirect error:",e));
+    return firebase.auth().onAuthStateChanged(u=>{
+      setUser(u);
+      setAuthLoading(false);
+    });
   },[]);
 
   useEffect(()=>{
@@ -577,20 +579,10 @@ function App(){
   const fsDel=async(col,id)=>{if(!user)return;await firebase.firestore().collection(`users/${user.uid}/${col}`).doc(id).delete();};
   const fsUpd=async(col,id,data)=>{if(!user)return;await firebase.firestore().collection(`users/${user.uid}/${col}`).doc(id).update(data);};
 
-  const signIn=async()=>{
+  const signIn=()=>{
     setSignInLoading(true);
-    try{
-      const provider=new firebase.auth.GoogleAuthProvider();
-      // Try popup first, fall back to redirect if blocked
-      try{
-        await firebase.auth().signInWithPopup(provider);
-      } catch(popupErr){
-        // If popup blocked, use redirect instead
-        if(popupErr.code==='auth/popup-blocked'||popupErr.code==='auth/popup-closed-by-user'){
-          await firebase.auth().signInWithRedirect(provider);
-        } else { throw popupErr; }
-      }
-    }catch(e){console.error(e);setSignInLoading(false);}
+    const provider=new firebase.auth.GoogleAuthProvider();
+    firebase.auth().signInWithRedirect(provider);
   };
   const signOutUser=()=>firebase.auth().signOut();
 
